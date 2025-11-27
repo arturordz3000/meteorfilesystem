@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package meteor_filesystem;
+
+service ClientChannel {
+    rpc CreateFile(CreateFileRequest) returns CreateFileResponse;
+}
+
+message CreateFileRequest {
+    string file_path = 1;
+    string file_name = 2;
+    int64 chunks_count = 3;
+}
+
+message CreateFileResponse {
+    RequestedAction requested_action = 1;
+}
+
+enum RequestedAction {
+    ChunkListReport = 1;
+}
+
+message HealthInformation {
+    int64 free_space_bytes = 1;
+    int32 avg_cpu_usage = 2;
+    int32 avg_memory_usage = 3;
+}
