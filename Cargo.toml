@@ -1,6 +1,6 @@
-[package]
-name = "meteorfilesystem"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
+[workspace]
+members = [
+    "crates/chunkserver",
+    "crates/common",
+    "crates/master",
+]

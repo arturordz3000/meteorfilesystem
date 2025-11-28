@@ -1,11 +1,9 @@
 syntax = "proto3";
 
-package meteor_filesystem;
-
-import "types.proto";
+package chunk_server_channel;
 
 service ChunkServerChannel {
-    rpc Heartbeat(HeartbeatRequest) returns HeartbeatResponse;
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
 }
 
 message HeartbeatRequest {
@@ -19,8 +17,8 @@ message HeartbeatResponse {
 }
 
 enum RequestedAction {
-    None = 1;
-    ChunkListReport = 2;
+    None = 0;
+    ChunkListReport = 1;
 }
 
 message HealthInformation {

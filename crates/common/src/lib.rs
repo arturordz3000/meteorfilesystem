@@ -1,3 +1,4 @@
+pub use tracing;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use tracing_appender::{rolling};
 
@@ -33,7 +34,8 @@ pub fn init_logging() {
                     fmt::layer()
                         .with_writer(non_blocking)
                         .with_ansi(false)   
-                );
+                )
+                .init();
         }
         LogOutput::Stdout => {
             tracing_subscriber::registry()
@@ -42,7 +44,8 @@ pub fn init_logging() {
                 fmt::layer()
                     .with_writer(std::io::stdout)
                     .with_ansi(true)   
-            );
+            )
+            .init();
         }
     }
 }

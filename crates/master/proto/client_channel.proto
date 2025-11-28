@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package meteor_filesystem;
+package client_channel;
 
 service ClientChannel {
-    rpc CreateFile(CreateFileRequest) returns CreateFileResponse;
+    rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
 }
 
 message CreateFileRequest {
@@ -13,15 +13,5 @@ message CreateFileRequest {
 }
 
 message CreateFileResponse {
-    RequestedAction requested_action = 1;
-}
-
-enum RequestedAction {
-    ChunkListReport = 1;
-}
-
-message HealthInformation {
-    int64 free_space_bytes = 1;
-    int32 avg_cpu_usage = 2;
-    int32 avg_memory_usage = 3;
+    repeated string chunkservers_list = 1;
 }
