@@ -1,4 +1,5 @@
 mod pb;
+mod model;
 mod chunk_server_channel;
 
 use common::tracing::{info};
@@ -13,13 +14,13 @@ use tonic::transport::Server;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     common::init_logging();
 
-    let addr = "127.0.0.1:50051".parse()?;
+    let address = "127.0.0.1:50051".parse()?;
 
-    info!("Server running at {}", addr);
+    info!("Server running at {}", address);
 
     Server::builder()
         .add_service(ChunkServerChannelServer::new(DefaultChunkServerChannel::default()))
-        .serve(addr)
+        .serve(address)
         .await?;
 
     Ok(())

@@ -546,6 +546,7 @@ name = "master"
 version = "0.1.0"
 dependencies = [
  "common",
+ "once_cell",
  "prost",
  "tokio",
  "tonic",
