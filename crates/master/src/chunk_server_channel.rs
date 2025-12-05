@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry;
 use std::time::Instant;
 use std::{collections::HashMap, sync::Mutex};
 
+use common::tracing::{debug, error};
 use tonic::{Request, Response, Status};
 use once_cell::sync::Lazy;
 use crate::model::chunkserver::ChunkServerHealthInformation;
@@ -23,8 +24,14 @@ impl ChunkServerChannel for DefaultChunkServerChannel {
         &self,
         request: Request<HeartbeatRequest>,
     ) -> Result<Response<HeartbeatResponse>, Status> {
-        let mut registry = CHUNKSERVER_REGISTRY.lock().expect("CHUNKSERVER_REGISTRY mutex poisoned");
+        let mut registry = CHUNKSERVER_REGISTRY.lock().unwrap_or_else(|e| {
+            error!("CHUNKSERVER_REGISTRY mutex poisoned with error: {}", e);
+            panic!();
+        });
+        
         let heartbeat = request.get_ref();
+
+        debug!("Heartbeat from {}", heartbeat.server_id);
 
         let mut reply = HeartbeatResponse {
             requested_action: RequestedAction::None.into()
