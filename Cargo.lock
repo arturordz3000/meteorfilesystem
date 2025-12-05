@@ -139,6 +139,9 @@ version = "0.1.0"
 dependencies = [
  "common",
  "master",
+ "prost",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

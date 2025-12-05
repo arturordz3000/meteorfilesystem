@@ -1,12 +1,15 @@
 mod model;
 
-use std::{sync::mpsc::{Sender, Receiver, channel}, thread::JoinHandle, time::Duration};
+use std::{sync::mpsc::{Sender, Receiver, channel}, time::Duration};
 
-use common::tracing::{info, error, debug};
+use tokio::task::JoinHandle;
+
+use common::{master_channel::HeartbeatRequest, tracing::{debug, error, info}};
 use common::master_channel::{master_channel_client::MasterChannelClient};
 use model::ThreadEvents;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     common::init_logging();
 
     let (heartbeat_tx, heartbeat_rx) = channel::<ThreadEvents>();
@@ -14,15 +17,26 @@ fn main() {
 
     // TODO: start RPC chunkserver server
 
-    shutdown_and_join_heartbeat_thread(&heartbeat_tx, heartbeat_thread);
+    shutdown_and_join_heartbeat_thread(&heartbeat_tx, heartbeat_thread).await;
 }
 
 fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()>  {
     info!("Starting heartbeat thread...");
 
-    return std::thread::spawn(move || {
+    return tokio::spawn(async move {
         loop {
-            // TODO: send heartbeat event to master node
+            let mut master_client = MasterChannelClient::connect("http://127.0.0.1:50051").await.unwrap_or_else(|error| {
+                error!("Could not connect to master from heartbeat thread: {:?}", error);
+                panic!();
+            });
+
+            if let Err(error) = master_client.heartbeat(HeartbeatRequest {
+                server_id: "Server1".to_string(),
+                ip_address: "127.0.0.1".to_string(),
+                health_information: None
+            }).await {
+                error!("Error sending heartbeat to master: {:?}", error);
+            }
 
             let message = heartbeat_rx.try_recv();
 
@@ -46,15 +60,17 @@ fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()
     }); 
 }
 
-fn shutdown_and_join_heartbeat_thread(heartbeat_tx: &Sender<ThreadEvents>, heartbeat_thread: JoinHandle<()>) {
-    let heartbeat_shutdown_message_result = heartbeat_tx.send(ThreadEvents::Shutdown);
+async fn shutdown_and_join_heartbeat_thread(heartbeat_tx: &Sender<ThreadEvents>, heartbeat_thread: JoinHandle<()>) {
+    // TODO: uncomment the following code after we add the chunkserver rpc channel
 
-    match heartbeat_shutdown_message_result {
-        Ok(_) => { info!("Shutdown sent to heartbeat thread"); },
-        Err(_) => { error!("Couldn't send shutdown to heartbeat thread") },
-    }
+    // let heartbeat_shutdown_message_result = heartbeat_tx.send(ThreadEvents::Shutdown);
 
-    heartbeat_thread.join().unwrap_or_else(|e| {
+    // match heartbeat_shutdown_message_result {
+    //     Ok(_) => { info!("Shutdown sent to heartbeat thread"); },
+    //     Err(_) => { error!("Couldn't send shutdown to heartbeat thread") },
+    // }
+
+    heartbeat_thread.await.unwrap_or_else(|e| {
         error!("Heartbeat thread panicked with the following error: {:?}", e);
     });
 }
