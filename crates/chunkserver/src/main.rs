@@ -1,21 +1,19 @@
 mod model;
 
-use std::{sync::mpsc::{Receiver, channel}, thread::JoinHandle, time::Duration};
+use std::{sync::mpsc::{Sender, Receiver, channel}, thread::JoinHandle, time::Duration};
 
-use common::tracing::{info, error};
+use common::tracing::{info, error, debug};
 use model::ThreadEvents;
 
 fn main() {
     common::init_logging();
 
-    let (_heartbeat_tx, heartbeat_rx) = channel::<ThreadEvents>();
+    let (heartbeat_tx, heartbeat_rx) = channel::<ThreadEvents>();
     let heartbeat_thread = start_heartbeat_thread(heartbeat_rx);
 
     // TODO: start RPC chunkserver server
 
-    heartbeat_thread.join().unwrap_or_else(|e| {
-        error!("Heartbeat thread panicked with the following error: {:?}", e);
-    });
+    shutdown_and_join_heartbeat_thread(&heartbeat_tx, heartbeat_thread);
 }
 
 fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()>  {
@@ -28,23 +26,34 @@ fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()
             let message = heartbeat_rx.try_recv();
 
             match message {
-                Ok(event) => {
-                    match event {
-                        ThreadEvents::Shutdown => {
-                            info!("Shutdown event received in heartbeat thread. Stopping thread...");
-                            break;
-                        }
-
-                        _ => {
-                            std::thread::sleep(Duration::from_secs(10));
-                        }
-                    }
+                Ok(ThreadEvents::Shutdown) => {
+                    info!("Shutdown received in heartbeat thread. Stopping thread...");
+                    break;
                 }
 
-                Err(error) => {
-                    error!("Unable to receive messages in heartbeat channel: {:?}", error);
+                Err(std::sync::mpsc::TryRecvError::Empty) => {
+                    debug!("No messages in heartbeat thread. Thread will sleep for 10 seconds...");
+                    std::thread::sleep(Duration::from_secs(10));
+                }
+    
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    error!("Heartbeat channel disconnected. Stopping heartbeat thread...");
+                    panic!()
                 }
             }
         }
     }); 
+}
+
+fn shutdown_and_join_heartbeat_thread(heartbeat_tx: &Sender<ThreadEvents>, heartbeat_thread: JoinHandle<()>) {
+    let heartbeat_shutdown_message_result = heartbeat_tx.send(ThreadEvents::Shutdown);
+
+    match heartbeat_shutdown_message_result {
+        Ok(_) => { info!("Shutdown sent to heartbeat thread"); },
+        Err(_) => { error!("Couldn't send shutdown to heartbeat thread") },
+    }
+
+    heartbeat_thread.join().unwrap_or_else(|e| {
+        error!("Heartbeat thread panicked with the following error: {:?}", e);
+    });
 }
