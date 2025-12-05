@@ -6,8 +6,8 @@ use common::tracing::{debug, error};
 use tonic::{Request, Response, Status};
 use once_cell::sync::Lazy;
 use crate::model::chunkserver::ChunkServerHealthInformation;
-use crate::pb::chunk_server_channel::{
-    HeartbeatRequest, HeartbeatResponse, RequestedAction, chunk_server_channel_server::ChunkServerChannel
+use common::master_channel::{
+    HeartbeatRequest, HeartbeatResponse, RequestedAction, master_channel_server::MasterChannel
 };
 use crate::model::{
     chunkserver::{ChunkServerMetadata, ChunkServersRegistry},
@@ -16,10 +16,10 @@ use crate::model::{
 pub static CHUNKSERVER_REGISTRY: Lazy<ChunkServersRegistry> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Default)]
-pub struct DefaultChunkServerChannel;
+pub struct DefaultMasterChannel;
 
 #[tonic::async_trait]
-impl ChunkServerChannel for DefaultChunkServerChannel {
+impl MasterChannel for DefaultMasterChannel {
     async fn heartbeat(
         &self,
         request: Request<HeartbeatRequest>,

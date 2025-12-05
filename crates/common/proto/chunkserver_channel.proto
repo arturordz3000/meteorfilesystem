@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package chunkserver_channel;
+
+service ClientChannel {
+    rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+}
+
+message CreateFileRequest {
+    string file_path = 1;
+    string file_name = 2;
+    int64 chunks_count = 3;
+}
+
+message CreateFileResponse {
+    repeated string chunkservers_list = 1;
+}

@@ -50,6 +50,14 @@ pub fn init_logging() {
     }
 }
 
+pub mod master_channel {
+    tonic::include_proto!("master_channel");
+}
+
+pub mod chunkserver_channel {
+    tonic::include_proto!("chunkserver_channel");
+}
+
 #[cfg(test)]
 mod tests {
     use serial_test::serial;

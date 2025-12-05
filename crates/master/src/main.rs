@@ -1,13 +1,12 @@
-mod pb;
 mod model;
-mod chunk_server_channel;
+mod master_channel;
 
 use common::tracing::{info};
 
-use pb::chunk_server_channel::{
-    chunk_server_channel_server::{ChunkServerChannelServer},
+use common::master_channel::{
+    master_channel_server::{MasterChannelServer},
 };
-use chunk_server_channel::DefaultChunkServerChannel;
+use master_channel::DefaultMasterChannel;
 use tonic::transport::Server;
 
 #[tokio::main]
@@ -19,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Server running at {}", address);
 
     Server::builder()
-        .add_service(ChunkServerChannelServer::new(DefaultChunkServerChannel::default()))
+        .add_service(MasterChannelServer::new(DefaultMasterChannel::default()))
         .serve(address)
         .await?;
 

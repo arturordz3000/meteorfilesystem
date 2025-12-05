@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package master_channel;
+
+service MasterChannel {
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+message HeartbeatRequest {
+    string server_id = 1;
+    string ip_address = 2;
+    HealthInformation health_information = 3;
+}
+
+message HeartbeatResponse {
+    RequestedAction requested_action = 1;
+}
+
+enum RequestedAction {
+    None = 0;
+    ChunkListReport = 1;
+}
+
+message HealthInformation {
+    int64 free_space_bytes = 1;
+    int32 avg_cpu_usage = 2;
+    int32 avg_memory_usage = 3;
+}

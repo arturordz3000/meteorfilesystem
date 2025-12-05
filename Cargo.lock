@@ -138,17 +138,21 @@ name = "chunkserver"
 version = "0.1.0"
 dependencies = [
  "common",
+ "master",
 ]
 
 [[package]]
 name = "common"
 version = "0.1.0"
 dependencies = [
+ "prost",
  "serde",
  "serde_json",
  "serial_test",
  "thiserror",
  "tokio",
+ "tonic",
+ "tonic-build",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",

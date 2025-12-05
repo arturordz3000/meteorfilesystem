@@ -3,6 +3,7 @@ mod model;
 use std::{sync::mpsc::{Sender, Receiver, channel}, thread::JoinHandle, time::Duration};
 
 use common::tracing::{info, error, debug};
+use common::master_channel::{master_channel_client::MasterChannelClient};
 use model::ThreadEvents;
 
 fn main() {
