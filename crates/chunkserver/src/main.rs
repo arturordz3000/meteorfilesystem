@@ -4,9 +4,12 @@ use std::{sync::mpsc::{Sender, Receiver, channel}, time::Duration};
 
 use tokio::task::JoinHandle;
 
-use common::{master_channel::HeartbeatRequest, tracing::{debug, error, info}};
+use common::{master_channel::{HeartbeatRequest}, tracing::{debug, error, info}};
 use common::master_channel::{master_channel_client::MasterChannelClient};
 use model::ThreadEvents;
+use crate::processors::actions_processor::ActionsProcessor;
+
+pub mod processors;
 
 #[tokio::main]
 async fn main() {
@@ -23,6 +26,8 @@ async fn main() {
 fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()>  {
     info!("Starting heartbeat thread...");
 
+    let mut action_processor = ActionsProcessor;
+
     return tokio::spawn(async move {
         loop {
             let mut master_client = MasterChannelClient::connect("http://127.0.0.1:50051").await.unwrap_or_else(|error| {
@@ -30,12 +35,22 @@ fn start_heartbeat_thread(heartbeat_rx: Receiver<ThreadEvents>) -> JoinHandle<()
                 panic!();
             });
 
-            if let Err(error) = master_client.heartbeat(HeartbeatRequest {
-                server_id: "Server1".to_string(),
-                ip_address: "127.0.0.1".to_string(),
-                health_information: None
-            }).await {
-                error!("Error sending heartbeat to master: {:?}", error);
+
+            let heartbeat_result = master_client.heartbeat(HeartbeatRequest {
+                    server_id: "Server1".to_string(),
+                    ip_address: "127.0.0.1".to_string(),
+                    health_information: None
+            }).await;
+
+            match heartbeat_result {
+                Ok(response) => {
+                    let requested_action = response.get_ref().requested_action;
+                    action_processor.process(requested_action);
+                }
+
+                Err(error) => {
+                    error!("Error sending heartbeat to master: {:?}", error);
+                }
             }
 
             let message = heartbeat_rx.try_recv();

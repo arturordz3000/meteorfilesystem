@@ -2,10 +2,16 @@ pub use tracing;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use tracing_appender::{rolling};
 
+use crate::master_channel::RequestedAction;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogOutput {
     File,
     Stdout,
+}
+
+pub trait Processor {
+    fn process(request_action: RequestedAction);
 }
 
 pub fn log_output_from_env() -> LogOutput {
